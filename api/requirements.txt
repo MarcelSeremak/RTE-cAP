@@ -3,7 +3,7 @@ pydantic
 sqlalchemy
 psycopg2-binary
 python-dotenv
-dbt-core
-dbt-postgres
+logging
+python-dotenv
 fastapi
 uvicorn

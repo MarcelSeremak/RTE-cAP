@@ -1,0 +1,6 @@
+kafka-python
+python-dotenv
+pydantic
+sqlalchemy
+psycopg2-binary
+logging

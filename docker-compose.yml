@@ -60,5 +60,63 @@ services:
       DBT_THREADS: 4
     command: ["dbt", "build"]
 
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile.producer
+    depends_on:
+      kafka:
+        condition: service_started
+    environment:
+      KAFKA_HOST: ${KAFKA_HOST}
+      KAFKA_INTERNAL_PORT: ${KAFKA_INTERNAL_PORT}
+      KAFKA_TOPIC: orders
+      GEN_RATE: ${GEN_RATE}
+    volumes:
+      - ./logs:/app/logs
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      KAFKA_HOST: ${KAFKA_HOST}
+      KAFKA_INTERNAL_PORT: ${KAFKA_INTERNAL_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - ./logs:/app/logs
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    environment:
+      KAFKA_HOST: ${KAFKA_HOST}
+      KAFKA_INTERNAL_PORT: ${KAFKA_INTERNAL_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - ./logs:/app/logs
+
 volumes:
   pgdata:

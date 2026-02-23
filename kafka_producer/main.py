@@ -11,8 +11,8 @@ logger = get_logger("kafka_producer")
 load_dotenv()
 
 TOPIC = os.getenv("KAFKA_TOPIC", "orders")
-KAFKA_HOST = os.getenv("KAFKA_HOST", "localhost")
-KAFKA_PORT = os.getenv("KAFKA_HOST_PORT", "9092")
+KAFKA_HOST = os.getenv("KAFKA_HOST", "kafka")
+KAFKA_PORT = os.getenv("KAFKA_INTERNAL_PORT", "19092")
 BOOTSTRAP = f"{KAFKA_HOST}:{KAFKA_PORT}"
 
 def generate_order() -> dict:

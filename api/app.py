@@ -12,12 +12,13 @@ app = fastapi.FastAPI(title="RTE-cAP API")
 logger = get_logger("api")
 load_dotenv()
 
-KAFKA_HOST = os.getenv("KAFKA_HOST", "localhost")
-KAFKA_PORT = os.getenv("KAFKA_HOST_PORT", "9092")
+KAFKA_HOST = os.getenv("KAFKA_HOST", "kafka")
+KAFKA_PORT = os.getenv("KAFKA_INTERNAL_PORT", "19092")
 BOOTSTRAP = f"{KAFKA_HOST}:{KAFKA_PORT}"
 
 @app.get("/health")
 def health_check():
+    logger.info("Performing health check")
     db = SessionLocal()
     try:
         db.execute(text("SELECT 1"))
