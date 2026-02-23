@@ -1,0 +1,9 @@
+kafka-python
+pydantic
+sqlalchemy
+psycopg2-binary
+python-dotenv
+dbt-core
+dbt-postgres
+fastapi
+uvicorn
