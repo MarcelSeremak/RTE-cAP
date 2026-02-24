@@ -17,6 +17,12 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 
   db:
     image: postgres:15
@@ -66,12 +72,13 @@ services:
       dockerfile: Dockerfile.producer
     depends_on:
       kafka:
-        condition: service_started
+        condition: service_healthy
     environment:
       KAFKA_HOST: ${KAFKA_HOST}
       KAFKA_INTERNAL_PORT: ${KAFKA_INTERNAL_PORT}
       KAFKA_TOPIC: orders
       GEN_RATE: ${GEN_RATE}
+      METRICS_PORT: 9103
     volumes:
       - ./logs:/app/logs
 
@@ -83,7 +90,7 @@ services:
       db:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     environment:
       KAFKA_HOST: ${KAFKA_HOST}
       KAFKA_INTERNAL_PORT: ${KAFKA_INTERNAL_PORT}
@@ -92,6 +99,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PORT: ${POSTGRES_PORT}
       DATABASE_URL: ${DATABASE_URL}
+      METRICS_PORT: 9102
     volumes:
       - ./logs:/app/logs
 
@@ -118,5 +126,43 @@ services:
     volumes:
       - ./logs:/app/logs
 
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+
+  promtail:
+    image: grafana/promtail:latest
+    depends_on:
+      - loki
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/logs:ro
+      - promtail_positions:/tmp
+
 volumes:
   pgdata:
+  loki_data:
+  promtail_positions:
+  grafana_data:

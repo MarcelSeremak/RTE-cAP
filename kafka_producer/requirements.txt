@@ -1,3 +1,4 @@
 kafka-python
 python-dotenv
 logging
+prometheus-client

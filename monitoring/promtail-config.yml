@@ -1,0 +1,31 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: api
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: api
+          __path__: /logs/api/*.log
+
+  - job_name: kafka_consumer
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: kafka_consumer
+          __path__: /logs/kafka_consumer/*.log
+
+  - job_name: kafka_producer
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: kafka_producer
+          __path__: /logs/kafka_producer/*.log

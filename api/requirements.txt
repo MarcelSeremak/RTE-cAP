@@ -7,3 +7,4 @@ logging
 python-dotenv
 fastapi
 uvicorn
+prometheus-client
