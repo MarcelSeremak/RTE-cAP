@@ -24,6 +24,20 @@ services:
       retries: 30
       start_period: 10s
 
+  kafka-init:
+    image: apache/kafka:${KAFKA_VERSION}
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    command:
+      - bash
+      - -lc
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic orders --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic payments --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic shipments --partitions 1 --replication-factor 1
+
   db:
     image: postgres:15
     restart: unless-stopped
@@ -43,6 +57,12 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+  
   dbt:
     build:
       context: .
@@ -66,19 +86,63 @@ services:
       DBT_THREADS: 4
     command: ["dbt", "build"]
 
-  producer:
+  orders_producer:
     build:
       context: .
       dockerfile: Dockerfile.producer
     depends_on:
-      kafka:
-        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
     environment:
       KAFKA_HOST: ${KAFKA_HOST}
       KAFKA_INTERNAL_PORT: ${KAFKA_INTERNAL_PORT}
       KAFKA_TOPIC: orders
       GEN_RATE: ${GEN_RATE}
       METRICS_PORT: 9103
+      NAME: orders
+      REDIS_URL: ${REDIS_URL}
+    volumes:
+      - ./logs:/app/logs
+
+  payments_producer:
+    build:
+      context: .
+      dockerfile: Dockerfile.producer
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    environment:
+      KAFKA_HOST: ${KAFKA_HOST}
+      KAFKA_INTERNAL_PORT: ${KAFKA_INTERNAL_PORT}
+      KAFKA_TOPIC: payments
+      GEN_RATE: ${GEN_RATE}
+      METRICS_PORT: 9104
+      NAME: payments
+      REDIS_URL: ${REDIS_URL}
+    volumes:
+      - ./logs:/app/logs
+
+  shipments_producer:
+    build:
+      context: .
+      dockerfile: Dockerfile.producer
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    environment:
+      KAFKA_HOST: ${KAFKA_HOST}
+      KAFKA_INTERNAL_PORT: ${KAFKA_INTERNAL_PORT}
+      KAFKA_TOPIC: shipments
+      GEN_RATE: ${GEN_RATE}
+      METRICS_PORT: 9105
+      NAME: shipments
+      REDIS_URL: ${REDIS_URL}
     volumes:
       - ./logs:/app/logs
 
