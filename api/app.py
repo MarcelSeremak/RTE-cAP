@@ -70,6 +70,22 @@ def metrics():
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
+@app.get("/pipeline/status")
+def pipeline_status():
+    db = SessionLocal()
+    try:
+        result = db.execute(text("""
+            SELECT
+              (SELECT COUNT(*) FROM raw.raw_events) AS raw_events_count,
+              (SELECT COUNT(*) FROM wh.fct_orders) AS fct_orders_count,
+              (SELECT COUNT(*) FROM wh.fct_payments) AS fct_payments_count,
+              (SELECT COUNT(*) FROM wh.fct_shipments) AS fct_shipments_count
+        """)).mappings().first()
+
+        return dict(result)
+    finally:
+        db.close()
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

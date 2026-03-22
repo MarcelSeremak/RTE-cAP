@@ -6,9 +6,17 @@ scrape_configs:
     static_configs:
       - targets: ["api:8000"]
 
-  - job_name: producer
+  - job_name: producer_orders
     static_configs:
-      - targets: ["producer:9103"]
+      - targets: ["orders_producer:9103"]
+
+  - job_name: producer_payments
+    static_configs:
+      - targets: ["payments_producer:9104"]
+
+  - job_name: producer_shipments
+    static_configs:
+      - targets: ["shipments_producer:9105"]
 
   - job_name: consumer
     static_configs:

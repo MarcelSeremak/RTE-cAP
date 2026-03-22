@@ -1,0 +1,80 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    name: Smoke test app stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Create .env for CI
+        run: |
+          cat > .env <<'EOF'
+          KAFKA_VERSION=4.2.0
+          KAFKA_HOST=kafka
+          KAFKA_HOST_PORT=9092
+          KAFKA_INTERNAL_PORT=19092
+          KAFKA_CONTROLLER_PORT=9093
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=postgres
+          POSTGRES_DB=orders_db
+          POSTGRES_PORT=5432
+          DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/orders_db
+          GEN_RATE=2
+          REDIS_URL=redis://redis:6379
+          EOF
+
+      - name: Show Docker versions
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Build app stack
+        run: docker compose -f docker-compose.app.yml build
+
+      - name: Start app stack
+        run: docker compose -f docker-compose.app.yml up -d
+
+      - name: Wait for services
+        run: |
+          sleep 45
+          docker compose -f docker-compose.app.yml ps
+
+      - name: Check API health
+        run: |
+          curl --fail http://localhost:8000/health
+          curl --fail http://localhost:8000/pipeline/status
+
+      - name: Check Kafka topics
+        run: |
+          docker compose -f docker-compose.app.yml exec -T kafka bash -lc \
+            "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --list"
+
+      - name: Check raw events count
+        run: |
+          docker compose -f docker-compose.app.yml exec -T db psql -U postgres -d orders_db -c \
+            "SELECT COUNT(*) FROM raw.raw_events;"
+
+      - name: Run dbt build
+        run: docker compose -f docker-compose.app.yml run --rm dbt dbt build
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker-compose.app.yml ps
+          docker compose -f docker-compose.app.yml logs --tail 200
+
+      - name: Stop stack
+        if: always()
+        run: docker compose -f docker-compose.app.yml down -v

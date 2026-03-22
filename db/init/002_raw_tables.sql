@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS raw.raw_orders (
+CREATE TABLE IF NOT EXISTS raw.raw_events (
   id BIGSERIAL PRIMARY KEY,
   kafka_topic TEXT NOT NULL,
   kafka_partition INT NOT NULL,

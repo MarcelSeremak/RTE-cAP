@@ -2,7 +2,7 @@ sources:
   - name: raw
     schema: raw
     tables:
-      - name: raw_orders
+      - name: raw_events
       - name: raw_products
       - name: raw_categories
       - name: raw_customers

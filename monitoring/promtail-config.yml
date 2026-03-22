@@ -23,9 +23,23 @@ scrape_configs:
           job: kafka_consumer
           __path__: /logs/kafka_consumer/*.log
 
-  - job_name: kafka_producer
+  - job_name: kafka_producer_orders
     static_configs:
       - targets: [localhost]
         labels:
           job: kafka_producer
-          __path__: /logs/kafka_producer/*.log
+          __path__: /logs/kafka_producer_orders/*.log
+
+  - job_name: kafka_producer_payments
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: kafka_producer
+          __path__: /logs/kafka_producer_payments/*.log
+
+  - job_name: kafka_producer_shipments
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: kafka_producer
+          __path__: /logs/kafka_producer_shipments/*.log

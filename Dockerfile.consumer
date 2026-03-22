@@ -7,6 +7,5 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY kafka_consumer /app/kafka_consumer
 COPY utils /app/utils
 COPY db /app/db
-COPY models /app/models
 
 CMD ["python", "-m", "kafka_consumer.main"]
