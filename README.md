@@ -2,6 +2,8 @@
 
 Real-Time Event Capture & Analytics Pipeline.
 
+![Dashboard](assets/SCHEMA.png)
+
 RTE-cAP is a containerized, event-driven data platform that simulates a small e-commerce flow end to end:
 `orders -> payments -> shipments`.
 
